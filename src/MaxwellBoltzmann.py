@@ -3,6 +3,8 @@ from scipy.integrate import quad, simps
 from scipy.interpolate import interp2d, RectBivariateSpline
 import scipy.special
 import os
+from astropy.time import Time
+from datetime import datetime, timezone
 
 from tqdm import tqdm
     
@@ -11,11 +13,45 @@ phi_interp = None
 #------- Velocity distribution stuff----------
 #----------------------------------------------
 
-v0 = 238
-vesc = 544.0 #Escape velocity
+v0 = 238 #(0, 238, 0) from 2105.00599
+vesc = 544.0 #Escape velocity from 2105.00599
 sigmav =v0 /np.sqrt(2) #Velocity dispersion (v_0/sqrt(2))
+
+
+
+today_utc = datetime.now(timezone.utc)
+t = Time(today_utc)
+today_jd = t.jd
+
+
+
+vmag_date = Time(datetime(2018, 3, 22, 0, 0, 0))
+
+delta_T = today_jd - vmag_date.jd
+omega = 0.0172 # / day
+
+ve = np.array([29.2,-0.1,5.9])
+v0 = np.array([0,238,0])
+
+v_star = np.array([11.2,12.2,7.3])
+mag_ve = np.sqrt(np.sum(np.square(ve)))
+ve = mag_ve  * np.array([
+    0.9941 * np.cos(omega*delta_T) - 0.0504 * np.sin(omega*delta_T),
+     0.1088 * np.cos(omega*delta_T) + 0.4946 * np.sin(omega*delta_T),
+      0.0042 * np.cos(omega*delta_T) - 0.8677 * np.sin(omega*delta_T),
+
+])
+ve = ve + v0  + v_star
+
+#will be correct for the day you run this
+ve = ve[1] #only the phi direction matters
+
+
+
+#override with whatever you want to set with. 
 ve = 250.2#263.0 #232.0  #Earth peculiar velocity around GC
 
+ve = 256.939362195229 #average for sensei modulation data collection 
 
 # Nesc - normalisation constant
 Nesc = (scipy.special.erf(vesc/(np.sqrt(2.0)*sigmav)) - np.sqrt(2.0/np.pi)*(vesc/sigmav)*np.exp(-vesc**2/(2.0*sigmav**2)))
